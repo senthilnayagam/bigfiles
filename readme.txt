@@ -26,11 +26,16 @@ cargo clean
 
 
 cargo build --release
-
+cp .\target\release\bigfiles.exe C:\Users\senth\bin\
 
 optimisations
 https://github.com/johnthagen/min-sized-rust
 
 cargo bloat
 cargo bloat --time -j 1
+
+
+Author: Senthil Nayagam
+
+
 
