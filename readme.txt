@@ -1,52 +1,51 @@
-ported the python code to rust for portability and having single binary
+# Bigfiles
 
-a) index files in folder in sqlite database
+Ported the initial Python code to Rust for portability and having a single binary.
 
-b) detect basic duplicates with filename and size match
+## Features
 
-c) list large files
+1. **Indexing**: Index files in a folder in the SQLite database.
+2. **Duplicate Detection**: Detect basic duplicates with filename and size match.
+3. **Large Files**: List large files.
 
+## Progress
 
+### Done
 
-done:
-a) list instructions if no params passed
+- [x] List instructions if no params passed.
+- [x] Display message if no duplicates found (either "0 duplicates found" or "no duplicates found").
+- [x] Version number and author information.
 
-b) if no duplicates found , either put 0 duplicates found or no duplicates found
+### Todo
 
-c) version number, and my name
+- [ ] Compute and store file SHA in the files table. This is optional as it can be compute-intensive.
+- [ ] Indexing can be time-consuming. Showing some progress, like a total count or a progress bar, would be better.
+- [ ] Display results in a tabular column.
+- [ ] Export file list with details as CSV.
 
-todo:
+## Build Commands
 
-d) compute and store file sha in files table , if asked explicitly as it can be compute intensive
-
-e) indexing takes much time, so showing some progress like total count or some progress bar can be better
-
-f) showing result in tabular column
-
-
-
-build
+```bash
 cargo run
 cargo build
 cargo check
 cargo clean
-
-
 cargo build --release
 cp .\target\release\bigfiles.exe C:\Users\senth\bin\
+```
 
-optimisations
-https://github.com/johnthagen/min-sized-rust
 
+Optimizations
+For further optimizations, check out min-sized-rust https://github.com/johnthagen/min-sized-rust
+```bash
 cargo bloat
 cargo bloat --time -j 1
+```
 
 
+# Authors
 Author: Senthil Nayagam
 Co-Author: ChatGPT4
 
-
-
-nice to haves
-cross compile and release on windows, linux and mac(intel) and mac(apple silicon)
-
+### Nice to Haves
+Cross-compile and release on Windows, Linux, Mac (Intel), and Mac (Apple Silicon).
