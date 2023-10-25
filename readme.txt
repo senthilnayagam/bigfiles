@@ -22,5 +22,15 @@ build
 cargo run
 cargo build
 cargo check
+cargo clean
+
 
 cargo build --release
+
+
+optimisations
+https://github.com/johnthagen/min-sized-rust
+
+cargo bloat
+cargo bloat --time -j 1
+

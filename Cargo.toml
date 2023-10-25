@@ -8,8 +8,15 @@ edition = "2021"
 [dependencies]
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 
+
+
 [profile.dev]
 opt-level = 0
 
 [profile.release]
-opt-level = 3
+debug = false
+opt-level = "z"
+strip = true  # Automatically strip symbols from the binary.
+lto = true
+codegen-units = 1
+panic = "abort"
