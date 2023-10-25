@@ -8,14 +8,18 @@ use rusqlite::{Connection, params};
 const DB_PATH: &str = "file_details.db";
 
 fn main() {
+    //const CARGO_PKG_VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
-        eprintln!("Usage: <command> [path]");
-        eprintln!("Usage: index [path] #index all files into sqlite db file file_details.db");
-        eprintln!("Usage: duplicates # list duplicates from db");
-        eprintln!("Usage: largefiles # list 100 largest files from db");
+        eprintln!("Usage: bigfiles <command> [param]");
+        eprintln!("bigfiles index [path] #index all files into sqlite db file file_details.db");
+        eprintln!("bigfiles duplicates # list duplicates from db");
+        eprintln!("bigfiles largefiles # list 100 largest files from db");
         eprintln!("Author: Senthil Nayagam");
+       // eprintln!("Version: {}",CARGO_PKG_VERSION.unwrap_or("NOT_FOUND"));
+       list_version();
+        
         return;
     }
 
@@ -30,6 +34,7 @@ fn main() {
         }
         "duplicates" => list_duplicates(),
         "largefiles" => list_large_files(),
+        "version" => list_version(),
         _ => eprintln!("Unknown command. Use 'index', 'duplicates', or 'largefiles'."),
     }
 }
@@ -76,6 +81,10 @@ fn index_recursive<P: AsRef<Path>>(path: P, conn: &Connection, file_count: &mut 
     }
 }
 
+fn list_version() {
+    const CARGO_PKG_VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
+    eprintln!("Version: {}",CARGO_PKG_VERSION.unwrap_or("NOT_FOUND"));
+}
 
 fn list_duplicates() {
     let conn = Connection::open(DB_PATH).unwrap();

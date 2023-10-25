@@ -8,13 +8,20 @@ c) list large files
 
 
 
-todo:
-
+done:
 a) list instructions if no params passed
 
 b) if no duplicates found , either put 0 duplicates found or no duplicates found
 
 c) version number, and my name
+
+todo:
+
+d) compute and store file sha in files table , if asked explicitly as it can be compute intensive
+
+e) indexing takes much time, so showing some progress like total count or some progress bar can be better
+
+f) showing result in tabular column
 
 
 
@@ -36,6 +43,10 @@ cargo bloat --time -j 1
 
 
 Author: Senthil Nayagam
+Co-Author: ChatGPT4
 
 
+
+nice to haves
+cross compile and release on windows, linux and mac(intel) and mac(apple silicon)
 
