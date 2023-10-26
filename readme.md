@@ -15,6 +15,12 @@ Ported the initial Python code to Rust for portability and having a single binar
 - [x] List instructions if no params passed.
 - [x] Display message if no duplicates found (either "0 duplicates found" or "no duplicates found").
 - [x] Version number and author information.
+- [x] find local ip address for accessing it from other computers in the network
+- [x]  generate QRcode for the local ip in terminal
+
+### Work in Progress
+
+- [ ] run a simple web app which can list duplicate files and large files and maybe a few sorting or search function via web interface
 
 ### Todo
 
@@ -22,7 +28,8 @@ Ported the initial Python code to Rust for portability and having a single binar
 - [ ] Indexing can be time-consuming. Showing some progress, like a total count or a progress bar, would be better.
 - [ ] Display results in a tabular column.
 - [ ] Export file list with details as CSV.
-- [ ] run a simple web app which can list duplicate files and large files and maybe a few sorting or search function via web interface
+
+
 
 ## Build Commands
 

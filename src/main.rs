@@ -5,10 +5,10 @@ use std::fs;
 use std::path::Path;
 use rusqlite::{Connection, params};
 
-const DB_PATH: &str = "file_details.db";
+
+const DB_PATH: &str = "bigfiles.db";
 
 fn main() {
-    //const CARGO_PKG_VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
     let args: Vec<String> = env::args().collect();
 
     if args.len() < 2 {
@@ -16,9 +16,8 @@ fn main() {
         eprintln!("bigfiles index [path] #index all files into sqlite db file file_details.db");
         eprintln!("bigfiles duplicates # list duplicates from db");
         eprintln!("bigfiles largefiles # list 100 largest files from db");
-        eprintln!("bigfiles server # web interface to list and search files");
+        eprintln!("bigfiles server # web interface to list and search files\n");
         eprintln!("Author: Senthil Nayagam");
-       // eprintln!("Version: {}",CARGO_PKG_VERSION.unwrap_or("NOT_FOUND"));
        list_version();
         
         return;
@@ -37,10 +36,9 @@ fn main() {
         "largefiles" => list_large_files(),
         "version" => list_version(),
         "server" => {
-            println!("Starting the server on http://127.0.0.1:3030");
             start_server();
         },
-        _ => eprintln!("Unknown command. Use 'index', 'duplicates', or 'largefiles'."),
+        _ => eprintln!("Unknown command. Use 'index', 'duplicates', 'largefiles' or 'server'."),
     }
 }
 
@@ -181,6 +179,19 @@ async fn list_large_files_web() -> Result<impl warp::Reply, warp::Rejection> {
 
 fn start_server() {
     //let index = warp::path("").and_then(index_web);
+    if let Some(ip) = get_local_ip() {
+        println!("Local IP: {}", ip);
+        let port = 3030; // Adjust the port as necessary
+        let url = format!("http://{}:{}/", ip, port);
+        println!("Starting the server on {}", url);
+        println!("Scan the QR code below for the URL:");
+        //generate_qr3(&url);
+        qr2term::print_qr(&url).unwrap();
+
+    } else {
+        println!("Failed to fetch the local IP");
+    }
+
      // GET /
     let index = warp::path::end().and_then( index_web);
     let duplicates = warp::path("duplicates").and_then(list_duplicates_web);
@@ -189,6 +200,18 @@ fn start_server() {
     let routes = warp::get().and(index.or(large_files).or(duplicates));
     let rt = tokio::runtime::Runtime::new().unwrap();
     rt.block_on(async {
-        warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+        warp::serve(routes).run(([0, 0, 0, 0], 3030)).await;
     });
 }
+
+
+use std::net::{UdpSocket}; //, SocketAddrV4, Ipv4Addr};
+
+fn get_local_ip() -> Option<String> {
+    // We bind to the address below to figure out what our local IP is.
+    let socket = UdpSocket::bind("0.0.0.0:0").expect("binding to local address failed");
+    // This will not actually establish a connection, but will choose the correct local address to use.
+    socket.connect("8.8.8.8:80").expect("connection to 8.8.8.8:80 failed");
+    socket.local_addr().ok().map(|addr| addr.ip().to_string())
+}
+

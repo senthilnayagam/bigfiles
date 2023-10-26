@@ -1,6 +1,6 @@
 [package]
 name = "bigfiles"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
@@ -9,6 +9,8 @@ edition = "2021"
 rusqlite = { version = "0.29.0", features = ["bundled"] }
 warp = "0.3"
 tokio = { version = "1", features = ["full"] }
+socket2 = "0.4"
+qr2term = "0.3.1"
 
 
 [profile.dev]
