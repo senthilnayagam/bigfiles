@@ -3,8 +3,19 @@ extern crate rusqlite;
 use std::env;
 use std::fs;
 use std::path::Path;
-use rusqlite::{Connection, params};
 
+use rusqlite::{Connection, params}; //sqlite
+
+use prettytable::{Table, Row, Cell, format}; //table display
+use prettytable::row;
+use prettytable::cell;
+
+use indicatif::{ProgressBar, ProgressStyle}; // progressbar
+
+use warp::{Filter}; // , Reply // web framework
+use warp::http::StatusCode;
+
+use std::net::{UdpSocket}; //, SocketAddrV4, Ipv4Addr};
 
 const DB_PATH: &str = "bigfiles.db";
 
@@ -43,9 +54,8 @@ fn main() {
     }
 }
 
-//use std::fs;
-//use std::path::Path;
-use indicatif::{ProgressBar, ProgressStyle};
+
+
 
 fn count_files<P: AsRef<Path>>(path: P) -> usize {
     let mut count = 0;
@@ -108,105 +118,72 @@ fn index_files_recursive<P: AsRef<Path>>(path: P) {
 }
 
 
-/*
-fn index_files<P: AsRef<Path>>(path: P) {
-    let conn = Connection::open(DB_PATH).unwrap();
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS files (
-            id INTEGER PRIMARY KEY,
-            path TEXT UNIQUE,
-            name TEXT,
-            size INTEGER,
-            extension TEXT
-        )",
-        [],
-    ).unwrap();
-
-    let mut file_count = 0;
-    index_recursive(&path, &conn, &mut file_count);
-
-    println!("Indexing completed. Total files indexed: {}", file_count);
-}
-
-
-use indicatif::{ProgressBar, ProgressStyle};
-//use std::fs;
-
-fn index_files<P: AsRef<std::path::Path>>(path: P) {
-    let conn = Connection::open(DB_PATH).unwrap();
-
-    conn.execute(
-        "CREATE TABLE IF NOT EXISTS files (
-            id INTEGER PRIMARY KEY,
-            path TEXT UNIQUE,
-            name TEXT,
-            size INTEGER,
-            extension TEXT
-        )",
-        [],
-    ).unwrap();
-
-    // Count total files for setting up the progress bar
-    let total_files = fs::read_dir(&path).unwrap().count();
-    let bar = ProgressBar::new(total_files as u64);
-    bar.set_style(ProgressStyle::default_bar()
-        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
-        .progress_chars("#>-"));
-
-    for entry in fs::read_dir(path).unwrap() {
-        let entry = entry.unwrap();
-        let metadata = entry.metadata().unwrap();
-        if metadata.is_file() {
-            let size = metadata.len() as i64;
-            let file_name = entry.file_name().into_string().unwrap();
-            let extension = entry.path().extension().and_then(|os| os.to_str()).unwrap_or("").to_string();
-            let path = entry.path().to_str().unwrap().to_string();
-
-            conn.execute(
-                "INSERT OR REPLACE INTO files (path, name, size, extension) VALUES (?1, ?2, ?3, ?4)",
-                params![path, file_name, size, extension],
-            ).unwrap();
-        }
-        
-        // Increment progress bar
-        bar.inc(1);
-    }
-
-    bar.finish();
-    println!("Indexing completed.");
-}
-
-
-fn index_recursive<P: AsRef<Path>>(path: P, conn: &Connection, file_count: &mut u32) {
-    for entry in fs::read_dir(&path).unwrap() {
-        let entry = entry.unwrap();
-        let metadata = entry.metadata().unwrap();
-
-        if metadata.is_file() {
-            *file_count += 1;
-
-            let size = metadata.len() as i64;
-            let file_name = entry.file_name().into_string().unwrap();
-            let extension = entry.path().extension().and_then(|os| os.to_str()).unwrap_or("").to_string();
-            let path = entry.path().to_str().unwrap().to_string();
-
-            conn.execute(
-                "INSERT OR REPLACE INTO files (path, name, size, extension) VALUES (?1, ?2, ?3, ?4)",
-                params![path, file_name, size, extension],
-            ).unwrap();
-        } else if metadata.is_dir() {
-            index_recursive(entry.path(), conn, file_count);
-        }
-    }
-}
-*/
-
 
 fn list_version() {
     const CARGO_PKG_VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");
     eprintln!("Version: {}",CARGO_PKG_VERSION.unwrap_or("NOT_FOUND"));
 }
 
+fn list_duplicates() {
+    let conn = Connection::open(DB_PATH).unwrap();
+
+    let mut stmt = conn.prepare(
+        "SELECT name, size, COUNT(*) FROM files GROUP BY size, name HAVING COUNT(*) > 1 ORDER BY size DESC"
+    ).unwrap();
+
+    let duplicates = stmt.query_map([], |row| {
+        let name: String = row.get(0)?;
+        let size: i64 = row.get(1)?;
+        let count: i64 = row.get(2)?;
+        Ok((name, size, count))
+    }).unwrap();
+/*
+let duplicates = stmt.query_map([], |row| {
+    Ok((
+        row.get::<_, String>(0)?,
+        row.get::<_, i64>(1)?,
+        row.get::<_, u32>(2)?
+    ))
+}).unwrap();
+*/
+
+    let mut table = Table::new();
+    table.add_row(row!["Filename", "Size (in bytes)", "Count"]);
+/*
+    for dup in duplicates {
+        let (name, size, count) = dup.unwrap();
+        table.add_row(row![name, size, count]);
+    }
+*/
+
+    for dup in duplicates {
+        match dup {
+            Ok((name, size, count)) => {
+                println!("Found duplicate: Name: {}, Size: {}, Count: {}", name, size, count);
+                //table.add_row(row![name, size, count]);
+                table.add_row(Row::new(vec![
+                    Cell::new(&name),
+                    Cell::new(&size.to_string()),
+                    Cell::new(&count.to_string()),
+                ]));
+            }
+            Err(e) => {
+                println!("Error processing a duplicate entry: {}", e);
+            }
+        }
+    }
+   // table.printstd();
+    if table.len() > 1 {
+        println!("Found Duplicates:");
+        table.printstd();
+    } else {
+        println!("No duplicates found.");
+    }
+}
+
+
+
+/*
 fn list_duplicates() {
     let conn = Connection::open(DB_PATH).unwrap();
 
@@ -247,32 +224,41 @@ fn list_duplicates() {
         }
     }
 }
+*/
+
+
+
 
 
 fn list_large_files() {
     let conn = Connection::open(DB_PATH).unwrap();
+    let mut stmt = conn.prepare("SELECT path, name, size FROM files ORDER BY size DESC LIMIT 50").unwrap();
+    
+    let mut table = Table::new();
+    table.set_format(*format::consts::FORMAT_CLEAN);
+    table.add_row(row!["Path", "Filename", "Size (in bytes)"]); // Header row
 
-    let mut stmt = conn.prepare(
-        "SELECT name, path, size FROM files ORDER BY size DESC LIMIT 100"
-    ).unwrap();
+    stmt.query_map([], |row| {
+        let path: String = row.get(0).unwrap();
+        let name: String = row.get(1).unwrap();
+        let size: i64 = row.get(2).unwrap();
+        println!("{}\t{}\t{}", path,name,size);
 
-    let files = stmt.query_map([], |row| {
-        let name: String = row.get(0)?;
-        let path: String = row.get(1)?;
-        let size: i64 = row.get(2)?;
-        Ok((name, path, size))
-    }).unwrap();
+        table.add_row(Row::new(vec![
+            Cell::new(&path),
+            Cell::new(&name),
+            Cell::new(&size.to_string()),
+        ]));
 
-    println!("Top 100 files by size:");
-    for file in files {
-        let (name, path, size) = file.unwrap();
-        println!("{} - {} - {} bytes", name, path, size);
-    }
+        Ok(())
+    }).unwrap().collect::<Result<Vec<_>, _>>().unwrap();
+
+    table.printstd();
 }
 
-use warp::{Filter}; // , Reply
 
-use warp::http::StatusCode;
+
+
 
 async fn index_web() -> Result<impl warp::Reply, warp::Rejection> {
     Ok(warp::reply::with_status(
@@ -323,7 +309,7 @@ fn start_server() {
 }
 
 
-use std::net::{UdpSocket}; //, SocketAddrV4, Ipv4Addr};
+
 
 fn get_local_ip() -> Option<String> {
     // We bind to the address below to figure out what our local IP is.

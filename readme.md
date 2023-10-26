@@ -22,12 +22,11 @@ Ported the initial Python code to Rust for portability and having a single binar
 ### Work in Progress
 
 - [ ] run a simple web app which can list duplicate files and large files and maybe a few sorting or search function via web interface
+- [ ] Display results in a tabular column.
 
 ### Todo
 
 - [ ] Compute and store file SHA in the files table. This is optional as it can be compute-intensive.
-
-- [ ] Display results in a tabular column.
 - [ ] Export file list with details as CSV.
 
 
