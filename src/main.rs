@@ -16,6 +16,7 @@ fn main() {
         eprintln!("bigfiles index [path] #index all files into sqlite db file file_details.db");
         eprintln!("bigfiles duplicates # list duplicates from db");
         eprintln!("bigfiles largefiles # list 100 largest files from db");
+        eprintln!("bigfiles server # web interface to list and search files");
         eprintln!("Author: Senthil Nayagam");
        // eprintln!("Version: {}",CARGO_PKG_VERSION.unwrap_or("NOT_FOUND"));
        list_version();
@@ -35,6 +36,10 @@ fn main() {
         "duplicates" => list_duplicates(),
         "largefiles" => list_large_files(),
         "version" => list_version(),
+        "server" => {
+            println!("Starting the server on http://127.0.0.1:3030");
+            start_server();
+        },
         _ => eprintln!("Unknown command. Use 'index', 'duplicates', or 'largefiles'."),
     }
 }
@@ -147,4 +152,43 @@ fn list_large_files() {
         let (name, path, size) = file.unwrap();
         println!("{} - {} - {} bytes", name, path, size);
     }
+}
+
+use warp::{Filter}; // , Reply
+
+use warp::http::StatusCode;
+
+async fn index_web() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::with_status(
+        "you can try \n /duplicates \n /largefiles",
+        StatusCode::OK,
+    ))
+}
+
+async fn list_duplicates_web() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::with_status(
+        "Duplicates List - This is a placeholder for now.",
+        StatusCode::OK,
+    ))
+}
+
+async fn list_large_files_web() -> Result<impl warp::Reply, warp::Rejection> {
+    Ok(warp::reply::with_status(
+        "Large Files List - This is a placeholder for now.",
+        StatusCode::OK,
+    ))
+}
+
+fn start_server() {
+    //let index = warp::path("").and_then(index_web);
+     // GET /
+    let index = warp::path::end().and_then( index_web);
+    let duplicates = warp::path("duplicates").and_then(list_duplicates_web);
+    let large_files = warp::path("largefiles").and_then(list_large_files_web);
+
+    let routes = warp::get().and(index.or(large_files).or(duplicates));
+    let rt = tokio::runtime::Runtime::new().unwrap();
+    rt.block_on(async {
+        warp::serve(routes).run(([127, 0, 0, 1], 3030)).await;
+    });
 }

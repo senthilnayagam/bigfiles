@@ -22,6 +22,7 @@ Ported the initial Python code to Rust for portability and having a single binar
 - [ ] Indexing can be time-consuming. Showing some progress, like a total count or a progress bar, would be better.
 - [ ] Display results in a tabular column.
 - [ ] Export file list with details as CSV.
+- [ ] run a simple web app which can list duplicate files and large files and maybe a few sorting or search function via web interface
 
 ## Build Commands
 
