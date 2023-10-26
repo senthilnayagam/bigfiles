@@ -30,7 +30,8 @@ fn main() {
                 return;
             }
             let path = &args[2];
-            index_files(path);
+            //index_files(path);
+            index_files_recursive(path);
         }
         "duplicates" => list_duplicates(),
         "largefiles" => list_large_files(),
@@ -42,6 +43,72 @@ fn main() {
     }
 }
 
+//use std::fs;
+//use std::path::Path;
+use indicatif::{ProgressBar, ProgressStyle};
+
+fn count_files<P: AsRef<Path>>(path: P) -> usize {
+    let mut count = 0;
+    for entry in fs::read_dir(&path).expect("Failed to read directory") {
+        let entry_path = entry.expect("Failed to read entry").path();
+        if entry_path.is_dir() {
+            count += count_files(&entry_path);
+        } else {
+            count += 1;
+        }
+    }
+    count
+}
+
+fn index_files_recursive<P: AsRef<Path>>(path: P) {
+    let conn = Connection::open(DB_PATH).unwrap();
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS files (
+            id INTEGER PRIMARY KEY,
+            path TEXT UNIQUE,
+            name TEXT,
+            size INTEGER,
+            extension TEXT
+        )",
+        [],
+    ).unwrap();
+
+    let total_files = count_files(&path);
+    let bar = ProgressBar::new(total_files as u64);
+    bar.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+        .progress_chars("#>-"));
+
+    fn recurse_and_index<P: AsRef<Path>>(path: P, conn: &Connection, bar: &ProgressBar) {
+        for entry in fs::read_dir(path).unwrap() {
+            let entry = entry.unwrap();
+            let metadata = entry.metadata().unwrap();
+            if metadata.is_dir() {
+                recurse_and_index(entry.path(), conn, bar);
+            } else if metadata.is_file() {
+                let size = metadata.len() as i64;
+                let file_name = entry.file_name().into_string().unwrap();
+                let extension = entry.path().extension().and_then(|os| os.to_str()).unwrap_or("").to_string();
+                let path = entry.path().to_str().unwrap().to_string();
+
+                conn.execute(
+                    "INSERT OR REPLACE INTO files (path, name, size, extension) VALUES (?1, ?2, ?3, ?4)",
+                    params![path, file_name, size, extension],
+                ).unwrap();
+                bar.inc(1);
+            }
+        }
+    }
+
+    recurse_and_index(&path, &conn, &bar);
+
+    bar.finish();
+    println!("Indexing completed.");
+}
+
+
+/*
 fn index_files<P: AsRef<Path>>(path: P) {
     let conn = Connection::open(DB_PATH).unwrap();
     conn.execute(
@@ -60,6 +127,55 @@ fn index_files<P: AsRef<Path>>(path: P) {
 
     println!("Indexing completed. Total files indexed: {}", file_count);
 }
+
+
+use indicatif::{ProgressBar, ProgressStyle};
+//use std::fs;
+
+fn index_files<P: AsRef<std::path::Path>>(path: P) {
+    let conn = Connection::open(DB_PATH).unwrap();
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS files (
+            id INTEGER PRIMARY KEY,
+            path TEXT UNIQUE,
+            name TEXT,
+            size INTEGER,
+            extension TEXT
+        )",
+        [],
+    ).unwrap();
+
+    // Count total files for setting up the progress bar
+    let total_files = fs::read_dir(&path).unwrap().count();
+    let bar = ProgressBar::new(total_files as u64);
+    bar.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {pos}/{len} ({eta})")
+        .progress_chars("#>-"));
+
+    for entry in fs::read_dir(path).unwrap() {
+        let entry = entry.unwrap();
+        let metadata = entry.metadata().unwrap();
+        if metadata.is_file() {
+            let size = metadata.len() as i64;
+            let file_name = entry.file_name().into_string().unwrap();
+            let extension = entry.path().extension().and_then(|os| os.to_str()).unwrap_or("").to_string();
+            let path = entry.path().to_str().unwrap().to_string();
+
+            conn.execute(
+                "INSERT OR REPLACE INTO files (path, name, size, extension) VALUES (?1, ?2, ?3, ?4)",
+                params![path, file_name, size, extension],
+            ).unwrap();
+        }
+        
+        // Increment progress bar
+        bar.inc(1);
+    }
+
+    bar.finish();
+    println!("Indexing completed.");
+}
+
 
 fn index_recursive<P: AsRef<Path>>(path: P, conn: &Connection, file_count: &mut u32) {
     for entry in fs::read_dir(&path).unwrap() {
@@ -83,6 +199,8 @@ fn index_recursive<P: AsRef<Path>>(path: P, conn: &Connection, file_count: &mut 
         }
     }
 }
+*/
+
 
 fn list_version() {
     const CARGO_PKG_VERSION: Option<&'static str> = option_env!("CARGO_PKG_VERSION");

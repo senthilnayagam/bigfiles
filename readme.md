@@ -17,6 +17,7 @@ Ported the initial Python code to Rust for portability and having a single binar
 - [x] Version number and author information.
 - [x] find local ip address for accessing it from other computers in the network
 - [x]  generate QRcode for the local ip in terminal
+- [x] Indexing can be time-consuming. Showing some progress, like a total count or a progress bar, would be better.
 
 ### Work in Progress
 
@@ -25,7 +26,7 @@ Ported the initial Python code to Rust for portability and having a single binar
 ### Todo
 
 - [ ] Compute and store file SHA in the files table. This is optional as it can be compute-intensive.
-- [ ] Indexing can be time-consuming. Showing some progress, like a total count or a progress bar, would be better.
+
 - [ ] Display results in a tabular column.
 - [ ] Export file list with details as CSV.
 
