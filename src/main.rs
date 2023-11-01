@@ -137,29 +137,16 @@ fn list_duplicates() {
         let count: i64 = row.get(2)?;
         Ok((name, size, count))
     }).unwrap();
-/*
-let duplicates = stmt.query_map([], |row| {
-    Ok((
-        row.get::<_, String>(0)?,
-        row.get::<_, i64>(1)?,
-        row.get::<_, u32>(2)?
-    ))
-}).unwrap();
-*/
+
 
     let mut table = Table::new();
     table.add_row(row!["Filename", "Size (in bytes)", "Count"]);
-/*
-    for dup in duplicates {
-        let (name, size, count) = dup.unwrap();
-        table.add_row(row![name, size, count]);
-    }
-*/
+
 
     for dup in duplicates {
         match dup {
             Ok((name, size, count)) => {
-                println!("Found duplicate: Name: {}, Size: {}, Count: {}", name, size, count);
+               // println!("Found duplicate: Name: {}, Size: {}, Count: {}", name, size, count);
                 //table.add_row(row![name, size, count]);
                 table.add_row(Row::new(vec![
                     Cell::new(&name),
@@ -183,49 +170,6 @@ let duplicates = stmt.query_map([], |row| {
 
 
 
-/*
-fn list_duplicates() {
-    let conn = Connection::open(DB_PATH).unwrap();
-
-    let mut stmt = conn.prepare(
-        "SELECT name, size, COUNT(*) FROM files GROUP BY size, name HAVING COUNT(*) > 1 ORDER BY size DESC"
-    ).unwrap();
-
-    let duplicates: Vec<(String, i64, i64)> = stmt.query_map([], |row| {
-        let name: String = row.get(0)?;
-        let size: i64 = row.get(1)?;
-        let count: i64 = row.get(2)?;
-        Ok((name, size, count))
-    }).unwrap().map(|dup| dup.unwrap()).collect();
-
-    let duplicate_count = duplicates.len();
-
-    if duplicate_count == 0 {
-        println!("No duplicates found.");
-        return;
-    }
-
-    println!("{} duplicates found:", duplicate_count);
-    for (name, size, count) in duplicates {
-        println!("File: {}, Size: {} appeared {} times:", name, size, count);
-
-        // Fetch and print all file paths for the given name and size
-        let mut path_stmt = conn.prepare(
-            "SELECT path FROM files WHERE name = ?1 AND size = ?2"
-        ).unwrap();
-        let file_paths = path_stmt.query_map(params![name, size], |row| {
-            let path: String = row.get(0)?;
-            Ok(path)
-        }).unwrap();
-
-        for path in file_paths {
-            let p = path.unwrap();
-            println!("\t{}", p);
-        }
-    }
-}
-*/
-
 
 
 
@@ -242,7 +186,7 @@ fn list_large_files() {
         let path: String = row.get(0).unwrap();
         let name: String = row.get(1).unwrap();
         let size: i64 = row.get(2).unwrap();
-        println!("{}\t{}\t{}", path,name,size);
+       // println!("{}\t{}\t{}", path,name,size);
 
         table.add_row(Row::new(vec![
             Cell::new(&path),
